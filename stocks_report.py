@@ -10,7 +10,6 @@ alphaVantageKey = 'xyz'
 tickers = ['KPITTECH.BSE', 'PERSISTENT.BSE', 'NEWGEN.BSE', 'TEJASNET.BSE', 'ADANIGREEN.BSE', 'ADANIPOWER.BSE', 'TATAPOWER.BSE', 'JPPOWER.BSE', 'VEDL.BSE', 'RELIANCE.BSE']
 
 async def dataRequest(ticker : str) -> dict:
-    print('Request sent')
     url = f'https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY&symbol={ticker}&apikey={alphaVantageKey}'
 
     async with aiohttp.ClientSession() as session:
