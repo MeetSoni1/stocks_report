@@ -12,6 +12,10 @@ provider "aws" {
   region = "eu-central-1"
 }
 
+variable "aws_access_key"{
+    description = "AWS user access key"
+    type = string
+}
 
 # EVENTBRIDGE
     # IAM Role
@@ -124,3 +128,9 @@ resource "aws_sns_topic_subscription" "user_updates_sqs_target" {
 }
 
 # Cloudwatch
+
+output "name" {
+#   To ouput value on the console while terraform apply
+# Ony one entity per output
+# terraform output - command to see only the outputs on the console
+}
