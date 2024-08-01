@@ -1,136 +1,183 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-    #   version = "~> 5.0"
-    }
-  }
-}
-
-# Configure the AWS Provider
-provider "aws" {
-  region = "eu-central-1"
-}
-
-variable "aws_access_key"{
-    description = "AWS user access key"
-    type = string
-}
-
 # EVENTBRIDGE
-    # IAM Role
-        # Policies
-            # Event bridge scheduler (default)
+# IAM Role
+# Policies
+# Event bridge scheduler (default)
+resource "aws_iam_role" "eventbridge_scheduler_role" {
+  name = "tf-eventbridge-scheduler-role"
 
-resource "aws_scheduler_schedule" "example" {
-  name       = "my-schedule"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "scheduler.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "eventbridge_scheduler_policy" {
+  name = "tf-eventbridge-scheduler-policy"
+  role = aws_iam_role.eventbridge_scheduler_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect   = "Allow",
+        Action   = "lambda:InvokeFunction",
+        Resource = aws_lambda_function.tf_local_lambda.arn
+      }
+    ]
+  })
+}
+
+resource "aws_scheduler_schedule" "tf_local_eventbidge" {
+  name       = "tf-eventbridge-schedule"
   group_name = "default"
 
   flexible_time_window {
     mode = "OFF"
   }
 
-  schedule_expression = "rate(1 hours)"
+  schedule_expression = "cron(0 8 ? * 1 *)"
 
   target {
-    arn      = aws_sqs_queue.example.arn
-    role_arn = aws_iam_role.example.arn
+    arn      = aws_lambda_function.tf_local_lambda.arn
+    role_arn = aws_iam_role.eventbridge_scheduler_role.arn
+
+    retry_policy {
+              maximum_event_age_in_seconds = 3600
+              maximum_retry_attempts       = 3
+    }
   }
 }
 
 
 # LAMBDA
-    # IAM Role
-        # Policies
-            # Lambda Basic Excecution(default)
-            # Parameter Store
-            # S3 put object
-
-data "aws_iam_policy_document" "assume_role" {
-  statement {
-    effect = "Allow"
-
-    principals {
-      type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
-    }
-
-    actions = ["sts:AssumeRole"]
-  }
-}
+# IAM Role
+# Policies
+# Lambda Basic Excecution(default)
+# Parameter Store
+# S3 put object
 
 resource "aws_iam_role" "iam_for_lambda" {
-  name               = "iam_for_lambda"
+  name               = "tf-iam-for-lambda"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
-data "archive_file" "lambda" {
-  type        = "zip"
-  source_file = "lambda.js"
-  output_path = "lambda_function_payload.zip"
+resource "aws_iam_role_policy" "lambda_basic_execution" {
+  name = "lambda_basic_execution"
+  role = aws_iam_role.iam_for_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource = "arn:aws:logs:*:*:*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:PutObject"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "ssm:GetParameter"
+        ],
+        Resource = "arn:aws:ssm:*:*:parameter/*"
+      }
+    ]
+  })
 }
 
-resource "aws_lambda_function" "test_lambda" {
+resource "aws_lambda_function" "tf_local_lambda" {
   # If the file is not in the current working directory you will need to include a path.module in the filename.
-  filename      = "lambda_function_payload.zip"
-  function_name = "lambda_function_name"
+  filename      = "Y:/projects/finance/aws/myTestFuncTF.zip"
+  function_name = "tf_local_lambda"
   role          = aws_iam_role.iam_for_lambda.arn
-  handler       = "index.test"
+  handler       = "lambda_function.lambda_handler"
 
-  source_code_hash = data.archive_file.lambda.output_base64sha256
+  source_code_hash = data.archive_file.lambda.output_base64sha256 # Defined in datasources.tf file
 
-  runtime = "nodejs18.x"
+  runtime = "python3.12"
 
-  environment {
-    variables = {
-      foo = "bar"
-    }
-  }
+  # environment {
+  #   variables = {
+  #     foo = "bar"
+  #   }
+  # }
 }
 
 
 # PARAMETER STORE
-resource "aws_ssm_parameter" "secret" {
-  name        = "/production/database/password/master"
-  description = "The parameter description"
-  type        = "SecureString"
-  value       = var.database_master_password
 
-#   tags = {
-#     environment = "production"
-#   }
+variable "alphaVantageAPI" {
+  description = "Alpha Vantage API key"
+  type        = string
+}
+resource "aws_ssm_parameter" "tf_local_parameter_store" {
+  name        = "/stocksReport/tf_keyAlphaVantageAPI"
+  description = "TF parameter description"
+  type        = "SecureString"
+  value       = var.alphaVantageAPI
+
+  #   tags = {
+  #     environment = "production"
+  #   }
 }
 
 
 # S3
 
-resource "aws_s3_bucket" "example" {
-  bucket = "my-tf-test-bucket"
+resource "aws_s3_bucket" "tf_local_s3" {
+  bucket = "tf-bucket-for-trial"
 
-#   tags = {
-#     Name        = "My bucket"
-#     Environment = "Dev"
-#   }
+  #   tags = {
+  #     Name        = "My bucket"
+  #     Environment = "Dev"
+  #   }
 }
-
+# resource "aws_s3_bucket_object" "object" {
+#   bucket = "tf-bucket"
+#   key    = "tf-bucket-stocksreport"
+# source = "path/to/file"
+# }
 
 # SNS
-    # Access Policy
+# Access Policy
 
-resource "aws_sns_topic" "user_updates" {
-  name = "user-updates-topic"
+resource "aws_sns_topic" "tf_local_sns_topic" {
+  name = "tf-sns-s3togmail"
 }
 
-resource "aws_sns_topic_subscription" "user_updates_sqs_target" {
-  topic_arn = "arn:aws:sns:us-west-2:432981146916:user-updates-topic"
-  protocol  = "sqs"
-  endpoint  = "arn:aws:sqs:us-west-2:432981146916:terraform-queue-too"
+variable "email" {
+  description = "My email address to send SNS notification"
+  type        = string
+}
+
+resource "aws_sns_topic_subscription" "email_notification" {
+  topic_arn = aws_sns_topic.tf_local_sns_topic.arn
+  protocol  = "email"
+  endpoint  = var.email
 }
 
 # Cloudwatch
 
-output "name" {
-#   To ouput value on the console while terraform apply
-# Ony one entity per output
-# terraform output - command to see only the outputs on the console
-}
+# output "name" {
+# #   To ouput value on the console while terraform apply
+# # Ony one entity per output
+# # terraform output - command to see only the outputs on the console
+# }
