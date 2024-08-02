@@ -4,8 +4,8 @@
 
 ---
 
-* **Data Collection:** REST API \
-* **Scripting Language:** Python \
+* **Data Collection:** REST API
+* **Scripting Language:** Python
 * **Infrastructure:** Terraform for provisioning and maintenance
 
 ___
