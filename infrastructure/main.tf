@@ -1,7 +1,4 @@
-# EVENTBRIDGE
-# IAM Role
-# Policies
-# Event bridge scheduler (default)
+# EVENTBRIDGE IAM Role
 resource "aws_iam_role" "eventbridge_scheduler_role" {
   name = "tf-eventbridge-scheduler-role"
 
@@ -19,6 +16,7 @@ resource "aws_iam_role" "eventbridge_scheduler_role" {
   })
 }
 
+# Eventbridge Policies
 resource "aws_iam_role_policy" "eventbridge_scheduler_policy" {
   name = "tf-eventbridge-scheduler-policy"
   role = aws_iam_role.eventbridge_scheduler_role.id
@@ -35,6 +33,7 @@ resource "aws_iam_role_policy" "eventbridge_scheduler_policy" {
   })
 }
 
+# Event bridge scheduler (default)
 resource "aws_scheduler_schedule" "tf_local_eventbidge" {
   name       = "tf-eventbridge-schedule"
   group_name = "default"
@@ -57,18 +56,13 @@ resource "aws_scheduler_schedule" "tf_local_eventbidge" {
 }
 
 
-# LAMBDA
-# IAM Role
-# Policies
-# Lambda Basic Excecution(default)
-# Parameter Store
-# S3 put object
-
+# Lambda IAM Role
 resource "aws_iam_role" "iam_for_lambda" {
   name               = "tf-iam-for-lambda"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
+# Lambda Policies
 resource "aws_iam_role_policy" "lambda_basic_execution" {
   name = "lambda_basic_execution"
   role = aws_iam_role.iam_for_lambda.id
@@ -103,6 +97,7 @@ resource "aws_iam_role_policy" "lambda_basic_execution" {
   })
 }
 
+# Lambda Basic Excecution(default)
 resource "aws_lambda_function" "tf_local_lambda" {
   # If the file is not in the current working directory you will need to include a path.module in the filename.
   filename      = "Y:/projects/finance/aws/myTestFuncTF.zip"
@@ -110,15 +105,9 @@ resource "aws_lambda_function" "tf_local_lambda" {
   role          = aws_iam_role.iam_for_lambda.arn
   handler       = "lambda_function.lambda_handler"
 
-  source_code_hash = data.archive_file.lambda.output_base64sha256 # Defined in datasources.tf file
+  source_code_hash = data.archive_file.lambda.output_base64sha256 # 'data' Defined in datasources.tf file
 
   runtime = "python3.12"
-
-  # environment {
-  #   variables = {
-  #     foo = "bar"
-  #   }
-  # }
 }
 
 
@@ -130,7 +119,7 @@ variable "alphaVantageAPI" {
 }
 resource "aws_ssm_parameter" "tf_local_parameter_store" {
   name        = "/stocksReport/tf_keyAlphaVantageAPI"
-  description = "TF parameter description"
+  description = "API Key"
   type        = "SecureString"
   value       = var.alphaVantageAPI
 
@@ -141,14 +130,8 @@ resource "aws_ssm_parameter" "tf_local_parameter_store" {
 
 
 # S3
-
 resource "aws_s3_bucket" "tf_local_s3" {
   bucket = "tf-bucket-for-trial"
-
-  #   tags = {
-  #     Name        = "My bucket"
-  #     Environment = "Dev"
-  #   }
 }
 # resource "aws_s3_bucket_object" "object" {
 #   bucket = "tf-bucket"
