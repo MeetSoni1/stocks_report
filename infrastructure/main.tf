@@ -1,6 +1,6 @@
 # EVENTBRIDGE IAM Role
 resource "aws_iam_role" "eventbridge_scheduler_role" {
-  name = "tf-eventbridge-scheduler-role"
+  name = "stocksReport-eventbridge-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -18,7 +18,7 @@ resource "aws_iam_role" "eventbridge_scheduler_role" {
 
 # Eventbridge Policies
 resource "aws_iam_role_policy" "eventbridge_scheduler_policy" {
-  name = "tf-eventbridge-scheduler-policy"
+  name = "stocksReport-eventbridge-lambda-schedule_policy"
   role = aws_iam_role.eventbridge_scheduler_role.id
 
   policy = jsonencode({
@@ -35,7 +35,7 @@ resource "aws_iam_role_policy" "eventbridge_scheduler_policy" {
 
 # Event bridge scheduler (default)
 resource "aws_scheduler_schedule" "tf_local_eventbidge" {
-  name       = "tf-eventbridge-schedule"
+  name       = "stocksreport-lambda-schedule"
   group_name = "default"
 
   flexible_time_window {
@@ -58,13 +58,13 @@ resource "aws_scheduler_schedule" "tf_local_eventbidge" {
 
 # Lambda IAM Role
 resource "aws_iam_role" "iam_for_lambda" {
-  name               = "tf-iam-for-lambda"
+  name               = "stockreport-iam-for-lambda"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
 # Lambda Policies
 resource "aws_iam_role_policy" "lambda_basic_execution" {
-  name = "lambda_basic_execution"
+  name = "stocksreport-lambda_basic_execution"
   role = aws_iam_role.iam_for_lambda.id
 
   policy = jsonencode({
@@ -101,7 +101,7 @@ resource "aws_iam_role_policy" "lambda_basic_execution" {
 resource "aws_lambda_function" "tf_local_lambda" {
   # If the file is not in the current working directory you will need to include a path.module in the filename.
   filename      = "Y:/projects/finance/aws/myTestFuncTF.zip"
-  function_name = "tf_local_lambda"
+  function_name = "stocksreport-lambda"
   role          = aws_iam_role.iam_for_lambda.arn
   handler       = "lambda_function.lambda_handler"
 
@@ -131,7 +131,7 @@ resource "aws_ssm_parameter" "tf_local_parameter_store" {
 
 # S3
 resource "aws_s3_bucket" "tf_local_s3" {
-  bucket = "tf-bucket-for-trial"
+  bucket = "stocksreport-bucket"
 }
 # resource "aws_s3_bucket_object" "object" {
 #   bucket = "tf-bucket"
@@ -143,7 +143,7 @@ resource "aws_s3_bucket" "tf_local_s3" {
 # Access Policy
 
 resource "aws_sns_topic" "tf_local_sns_topic" {
-  name = "tf-sns-s3togmail"
+  name = "stocksreport-sns-s3togmail"
 }
 
 variable "email" {
