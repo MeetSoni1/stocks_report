@@ -1,7 +1,7 @@
 data "archive_file" "lambda" {
   type        = "zip"
-  source_dir  = "Y:/projects/finance/aws/myTestFuncTF"
-  output_path = "Y:/projects/finance/aws/myTestFuncTF.zip"
+  source_dir  = "/stocksReportLambdaFunc"
+  output_path = "/stocksReportLambdaFunc.zip"
 }
 
 data "aws_iam_policy_document" "assume_role" {

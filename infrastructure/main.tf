@@ -1,4 +1,6 @@
-# EVENTBRIDGE IAM Role
+# Variables declared in .tfvars file
+
+# Eventbridge IAM Role
 resource "aws_iam_role" "eventbridge_scheduler_role" {
   name = "stocksReport-eventbridge-role"
 
@@ -33,7 +35,7 @@ resource "aws_iam_role_policy" "eventbridge_scheduler_policy" {
   })
 }
 
-# Event bridge scheduler (default)
+# Event bridge scheduler
 resource "aws_scheduler_schedule" "tf_local_eventbidge" {
   name       = "stocksreport-lambda-schedule"
   group_name = "default"
@@ -49,22 +51,21 @@ resource "aws_scheduler_schedule" "tf_local_eventbidge" {
     role_arn = aws_iam_role.eventbridge_scheduler_role.arn
 
     retry_policy {
-              maximum_event_age_in_seconds = 3600
-              maximum_retry_attempts       = 3
+      maximum_event_age_in_seconds = 3600
+      maximum_retry_attempts       = 3
     }
   }
 }
 
-
 # Lambda IAM Role
 resource "aws_iam_role" "iam_for_lambda" {
-  name               = "stockreport-iam-for-lambda"
+  name               = "stockreport-iam-lambda-role"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
 # Lambda Policies
 resource "aws_iam_role_policy" "lambda_basic_execution" {
-  name = "stocksreport-lambda_basic_execution"
+  name = "stocksreport-lambda-policy"
   role = aws_iam_role.iam_for_lambda.id
 
   policy = jsonencode({
@@ -97,22 +98,21 @@ resource "aws_iam_role_policy" "lambda_basic_execution" {
   })
 }
 
-# Lambda Basic Excecution(default)
+# Lambda Basic Excecution
 resource "aws_lambda_function" "tf_local_lambda" {
-  # If the file is not in the current working directory you will need to include a path.module in the filename.
-  filename      = "Y:/projects/finance/aws/myTestFuncTF.zip"
+  # Include a path.module in the filename if the file is not in the current working directory.
+  filename      = "/stocksReportLambdaFunc.zip"
   function_name = "stocksreport-lambda"
   role          = aws_iam_role.iam_for_lambda.arn
   handler       = "lambda_function.lambda_handler"
 
-  source_code_hash = data.archive_file.lambda.output_base64sha256 # 'data' Defined in datasources.tf file
+  # 'data' Defined in datasources.tf file
+  source_code_hash = data.archive_file.lambda.output_base64sha256
 
   runtime = "python3.12"
 }
 
-
-# PARAMETER STORE
-
+# Parameter Store
 variable "alphaVantageAPI" {
   description = "Alpha Vantage API key"
   type        = string
@@ -122,26 +122,15 @@ resource "aws_ssm_parameter" "tf_local_parameter_store" {
   description = "API Key"
   type        = "SecureString"
   value       = var.alphaVantageAPI
-
-  #   tags = {
-  #     environment = "production"
-  #   }
 }
 
-
-# S3
+# S3 bucket
 resource "aws_s3_bucket" "tf_local_s3" {
   bucket = "stocksreport-bucket"
 }
-# resource "aws_s3_bucket_object" "object" {
-#   bucket = "tf-bucket"
-#   key    = "tf-bucket-stocksreport"
-# source = "path/to/file"
-# }
 
 # SNS
 # Access Policy
-
 resource "aws_sns_topic" "tf_local_sns_topic" {
   name = "stocksreport-sns-s3togmail"
 }
@@ -151,16 +140,9 @@ variable "email" {
   type        = string
 }
 
+# SNS Subscription
 resource "aws_sns_topic_subscription" "email_notification" {
   topic_arn = aws_sns_topic.tf_local_sns_topic.arn
   protocol  = "email"
   endpoint  = var.email
 }
-
-# Cloudwatch
-
-# output "name" {
-# #   To ouput value on the console while terraform apply
-# # Ony one entity per output
-# # terraform output - command to see only the outputs on the console
-# }
