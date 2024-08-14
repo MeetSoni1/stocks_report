@@ -1,9 +1,11 @@
-<center># AWS ETL Architecture for Automated Stocks Report</center>
+**Description:** Automatic Stocks report generation with lastest Stock Market data every week by building simple ETL pipeline on AWS.
+
+---
+
+<h1><center>AWS ETL Architecture<center></h1>
 
 ![AWS Architecture](architecture/architecture.gif)
 
----
-**Description:** Automatic Stocks report generation every week by building simple ETL pipeline on AWS.
 ---
 
 * **Data Collection:** Asynchronous REST API calls
