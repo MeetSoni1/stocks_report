@@ -1,12 +1,12 @@
 # AWS ETL Architecture
 
-![infra](architecture/infrastructure.png)
+![AWS Architecture](architecture/architecture.gif)
 
 ---
 
-* **Data Collection:** REST API
+* **Data Collection:** Asynchronous REST API calls
 * **Scripting Language:** Python
-* **Infrastructure:** Terraform for provisioning and maintenance
+* **Infrastructure provisioning and maintenance:** Terraform
 
 ___
 
@@ -14,8 +14,8 @@ ___
 
 * **Parameter Store:** Secure storage for API keys with KMS encryption
 * **EventBridge:** Scheduling CRON jobs to trigger Lambda functions
-* **Lambda:** Asynchronous API calls and data transformation into reports
+* **Lambda:** Run Python Script for Data Ectraction and transformation
 * **S3:** Storing the generated reports
-* **SNS:** Email notifications for report delivery
+* **SNS:** Email notifications for new reports
 * **CloudWatch:** Comprehensive monitoring
 * **IAM:** Managing roles and policies
